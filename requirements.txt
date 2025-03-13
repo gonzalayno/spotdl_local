@@ -1,0 +1,5 @@
+spotdl
+ttkthemes
+pillow
+requests
+pyinstaller 
