@@ -13,7 +13,7 @@ Una aplicación gráfica para descargar música de Spotify y YouTube.
 
 1. Descarga el instalador:
 ```bash
-wget https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/install.sh
+wget https://raw.githubusercontent.com/gonzalayno/spotdl_local/master/install.sh
 ```
 
 2. Dale permisos de ejecución al script de instalación:
