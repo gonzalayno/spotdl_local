@@ -95,12 +95,29 @@ mkdir "%TEMP_DIR%"
 
 REM Clonar el repositorio
 echo Clonando el repositorio...
-git clone https://github.com/gonzalayno/spotdl_local.git "%TEMP_DIR%"
+git config --global http.postBuffer 524288000
+git config --global core.compression 0
+git config --global http.sslVerify false
+
+echo Intentando clonar el repositorio...
+git clone --depth 1 https://github.com/gonzalayno/spotdl_local.git "%TEMP_DIR%"
 if errorlevel 1 (
-    echo Error: No se pudo clonar el repositorio.
-    echo Por favor, verifica tu conexión a Internet y vuelve a intentarlo.
-    pause
-    exit /b 1
+    echo Error en el primer intento. Intentando método alternativo...
+    git clone --depth 1 --single-branch https://github.com/gonzalayno/spotdl_local.git "%TEMP_DIR%"
+    if errorlevel 1 (
+        echo Error en el segundo intento. Intentando método alternativo...
+        git clone --depth 1 --single-branch --no-checkout https://github.com/gonzalayno/spotdl_local.git "%TEMP_DIR%"
+        if errorlevel 1 (
+            echo Error: No se pudo clonar el repositorio.
+            echo Por favor, verifica tu conexión a Internet y vuelve a intentarlo.
+            echo Si el problema persiste, intenta:
+            echo 1. Verificar tu conexión a Internet
+            echo 2. Desactivar temporalmente tu firewall
+            echo 3. Usar una VPN si estás detrás de un proxy
+            pause
+            exit /b 1
+        )
+    )
 )
 
 REM Cambiar al directorio del proyecto
