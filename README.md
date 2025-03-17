@@ -11,10 +11,9 @@ Una aplicación gráfica para descargar música de Spotify y YouTube.
 
 ## Instalación
 
-1. Descarga el repositorio:
+1. Descarga el instalador:
 ```bash
-git clone https://github.com/tu-usuario/spotdl.git
-cd spotdl
+wget https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/install.sh
 ```
 
 2. Dale permisos de ejecución al script de instalación:
@@ -28,11 +27,18 @@ chmod +x install.sh
 ```
 
 El script de instalación:
-- Verificará que tengas Python y pip instalados
+- Verificará que tengas Git instalado (lo instalará si es necesario)
+- Clonará el repositorio en un directorio temporal
 - Creará un entorno virtual
 - Instalará todas las dependencias necesarias
 - Creará el ejecutable
 - Instalará la aplicación en tu sistema
+- Limpiará los archivos temporales
+
+Si encuentras algún error durante la instalación:
+1. Verifica tu conexión a Internet
+2. Asegúrate de tener suficiente espacio en disco
+3. Intenta ejecutar el script nuevamente
 
 ## Uso
 
