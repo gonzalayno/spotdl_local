@@ -150,6 +150,11 @@ sudo mkdir -p /usr/local/bin
 sudo mkdir -p /usr/share/icons
 sudo mkdir -p /usr/share/applications
 
+# Crear archivo de caché
+echo -e "${YELLOW}Creando archivo de caché...${NC}"
+touch ~/.spotdl_cache.json
+chmod 644 ~/.spotdl_cache.json
+
 # Copiar archivos
 echo -e "${YELLOW}Copiando archivos...${NC}"
 sudo cp dist/spotdl /usr/local/bin/

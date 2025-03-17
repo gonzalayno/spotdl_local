@@ -11,6 +11,7 @@ import random
 import time
 import webbrowser
 import json
+from pathlib import Path
 
 
 class SpotifyDownloaderApp:
@@ -42,6 +43,16 @@ class SpotifyDownloaderApp:
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59"
         ]
+
+        self.cache_file = Path.home() / '.spotdl_cache.json'
+        self.cache_duration = 3600  # 1 hora en segundos
+        
+        # Verificar caché
+        if self._check_cache():
+            self._load_from_cache()
+        else:
+            self._initialize_app()
+            self._save_to_cache()
 
         self.create_header()
         self.create_main_frame()
@@ -267,6 +278,62 @@ class SpotifyDownloaderApp:
     def log_message(self, message):
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
+
+    def _check_cache(self):
+        if not self.cache_file.exists():
+            return False
+            
+        try:
+            cache_data = json.loads(self.cache_file.read_text())
+            if time.time() - cache_data.get('timestamp', 0) > self.cache_duration:
+                return False
+            return True
+        except:
+            return False
+            
+    def _load_from_cache(self):
+        try:
+            cache_data = json.loads(self.cache_file.read_text())
+            # Cargar datos del caché
+            self.spotify_client = cache_data.get('spotify_client')
+            self.ffmpeg_installed = cache_data.get('ffmpeg_installed')
+            self.ytm_connection = cache_data.get('ytm_connection')
+        except:
+            self._initialize_app()
+            
+    def _save_to_cache(self):
+        try:
+            cache_data = {
+                'timestamp': time.time(),
+                'spotify_client': self.spotify_client,
+                'ffmpeg_installed': self.ffmpeg_installed,
+                'ytm_connection': self.ytm_connection
+            }
+            self.cache_file.write_text(json.dumps(cache_data))
+        except:
+            pass
+            
+    def _initialize_app(self):
+        # Inicializar la aplicación normalmente
+        self.spotify_client = None
+        self.ffmpeg_installed = False
+        self.ytm_connection = False
+        
+        # Verificar ffmpeg
+        if is_ffmpeg_installed():
+            self.ffmpeg_installed = True
+            
+        # Verificar conexión YTM
+        if check_ytmusic_connection():
+            self.ytm_connection = True
+            
+        # Inicializar cliente Spotify
+        try:
+            self.spotify_client = SpotifyClient()
+        except:
+            pass
+            
+        # Resto de la inicialización...
 
 
 if __name__ == "__main__":
