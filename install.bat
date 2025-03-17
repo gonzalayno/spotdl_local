@@ -95,18 +95,9 @@ mkdir "%TEMP_DIR%"
 
 REM Descargar archivos necesarios
 echo Descargando archivos necesarios...
-powershell -Command "& {
-    $files = @{
-        'music_downloader.py' = 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/music_downloader.py'
-        'requirements.txt' = 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/requirements.txt'
-        'music_downloader.spec' = 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/music_downloader.spec'
-    }
-    
-    foreach ($file in $files.GetEnumerator()) {
-        Write-Host ('Descargando ' + $file.Key + '...')
-        Invoke-WebRequest -Uri $file.Value -OutFile ('%TEMP_DIR%\' + $file.Key)
-    }
-}"
+powershell -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/music_downloader.py' -OutFile '%TEMP_DIR%\music_downloader.py'"
+powershell -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/requirements.txt' -OutFile '%TEMP_DIR%\requirements.txt'"
+powershell -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/music_downloader.spec' -OutFile '%TEMP_DIR%\music_downloader.spec'"
 
 REM Verificar si se descargaron los archivos
 if not exist "%TEMP_DIR%\music_downloader.py" (
