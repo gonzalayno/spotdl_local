@@ -1,16 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
-import os
-from PyInstaller.utils.hooks import collect_data_files
-
-pykakasi_datas = collect_data_files('pykakasi')
-spotdl_datas = collect_data_files('spotdl')
 
 a = Analysis(
     ['music_downloader.py'],
     pathex=[],
     binaries=[],
-    datas=pykakasi_datas + spotdl_datas,
-    hiddenimports=['ttkthemes', 'PIL', 'requests', 'yt_dlp', 'random', 'time', 'pykakasi', 'spotdl'],
+    datas=[],
+    hiddenimports=['ttkthemes', 'PIL', 'requests', 'yt_dlp', 'random', 'time'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -26,7 +21,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='music_downloader',
+    name='spotdl',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

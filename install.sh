@@ -19,21 +19,53 @@ fi
 TEMP_DIR=$(mktemp -d)
 echo -e "${YELLOW}Creando directorio temporal...${NC}"
 
+# Función para intentar clonar con diferentes opciones
+clone_repository() {
+    local attempts=0
+    local max_attempts=3
+    
+    while [ $attempts -lt $max_attempts ]; do
+        attempts=$((attempts + 1))
+        echo -e "${YELLOW}Intento $attempts de $max_attempts...${NC}"
+        
+        # Configurar git para usar HTTPS
+        git config --global http.sslVerify false
+        
+        # Primer intento: clonado normal
+        if [ $attempts -eq 1 ]; then
+            if git clone https://github.com/gonzalayno/spotdl_local.git "$TEMP_DIR" 2>/dev/null; then
+                return 0
+            fi
+        # Segundo intento: clonado superficial
+        elif [ $attempts -eq 2 ]; then
+            rm -rf "$TEMP_DIR"/*
+            if git clone --depth 1 https://github.com/gonzalayno/spotdl_local.git "$TEMP_DIR" 2>/dev/null; then
+                return 0
+            fi
+        # Tercer intento: usando el protocolo git
+        else
+            rm -rf "$TEMP_DIR"/*
+            if git clone git://github.com/gonzalayno/spotdl_local.git "$TEMP_DIR" 2>/dev/null; then
+                return 0
+            fi
+        fi
+        
+        echo -e "${RED}Intento $attempts falló. Esperando 5 segundos antes del siguiente intento...${NC}"
+        sleep 5
+    done
+    
+    return 1
+}
+
 # Intentar clonar el repositorio
 echo -e "${YELLOW}Clonando el repositorio...${NC}"
-if git clone https://github.com/gonzalayno/spotdl_local.git "$TEMP_DIR"; then
+if clone_repository; then
     echo -e "${GREEN}Repositorio clonado exitosamente.${NC}"
 else
-    echo -e "${RED}Error al clonar el repositorio.${NC}"
-    echo -e "Intentando con HTTPS alternativo..."
-    if git clone https://github.com/gonzalayno/spotdl_local.git "$TEMP_DIR" --depth 1; then
-        echo -e "${GREEN}Repositorio clonado exitosamente.${NC}"
-    else
-        echo -e "${RED}Error: No se pudo clonar el repositorio.${NC}"
-        echo -e "Por favor, verifica tu conexión a Internet y vuelve a intentarlo."
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
+    echo -e "${RED}Error: No se pudo clonar el repositorio después de varios intentos.${NC}"
+    echo -e "Por favor, verifica tu conexión a Internet y vuelve a intentarlo."
+    rm -rf "$TEMP_DIR"
+    exit 1
 fi
 
 # Cambiar al directorio del proyecto
@@ -135,9 +167,43 @@ EOL
 echo -e "${YELLOW}Generando el icono...${NC}"
 python create_icon.py
 
+# Crear el archivo .desktop
+echo -e "${YELLOW}Creando archivo .desktop...${NC}"
+cat > spotdl.desktop << 'EOL'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SpotDL Music Downloader
+Comment=Descarga música desde Spotify y YouTube
+Exec=/usr/local/bin/spotdl
+Icon=/usr/share/icons/spotdl.png
+Terminal=false
+Categories=Audio;Music;Network;
+Keywords=music;spotify;youtube;download;
+EOL
+
 # Verificar si los archivos necesarios existen
+echo -e "${YELLOW}Verificando archivos necesarios...${NC}"
+if [ ! -f "dist/spotdl" ]; then
+    echo -e "${RED}Error: No se encuentra el archivo dist/spotdl${NC}"
+fi
+if [ ! -f "spotdl.png" ]; then
+    echo -e "${RED}Error: No se encuentra el archivo spotdl.png${NC}"
+fi
+if [ ! -f "spotdl.desktop" ]; then
+    echo -e "${RED}Error: No se encuentra el archivo spotdl.desktop${NC}"
+fi
+
 if [ ! -f "dist/spotdl" ] || [ ! -f "spotdl.png" ] || [ ! -f "spotdl.desktop" ]; then
     echo -e "${RED}Error: No se pudieron crear todos los archivos necesarios.${NC}"
+    echo -e "${YELLOW}Contenido del directorio actual:${NC}"
+    ls -la
+    echo -e "${YELLOW}Contenido del directorio dist (si existe):${NC}"
+    if [ -d "dist" ]; then
+        ls -la dist/
+    else
+        echo -e "${RED}El directorio dist no existe${NC}"
+    fi
     rm -rf "$TEMP_DIR"
     exit 1
 fi
