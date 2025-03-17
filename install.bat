@@ -93,31 +93,27 @@ set TEMP_DIR=%TEMP%\spotdl_install
 if exist "%TEMP_DIR%" rd /s /q "%TEMP_DIR%"
 mkdir "%TEMP_DIR%"
 
-REM Clonar el repositorio
-echo Clonando el repositorio...
-git config --global http.postBuffer 524288000
-git config --global core.compression 0
-git config --global http.sslVerify false
+REM Descargar archivos necesarios
+echo Descargando archivos necesarios...
+powershell -Command "& {
+    $files = @{
+        'music_downloader.py' = 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/music_downloader.py'
+        'requirements.txt' = 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/requirements.txt'
+        'music_downloader.spec' = 'https://raw.githubusercontent.com/gonzalayno/spotdl_local/main/music_downloader.spec'
+    }
+    
+    foreach ($file in $files.GetEnumerator()) {
+        Write-Host ('Descargando ' + $file.Key + '...')
+        Invoke-WebRequest -Uri $file.Value -OutFile ('%TEMP_DIR%\' + $file.Key)
+    }
+}"
 
-echo Intentando clonar el repositorio...
-git clone --depth 1 https://github.com/gonzalayno/spotdl_local.git "%TEMP_DIR%"
-if errorlevel 1 (
-    echo Error en el primer intento. Intentando método alternativo...
-    git clone --depth 1 --single-branch https://github.com/gonzalayno/spotdl_local.git "%TEMP_DIR%"
-    if errorlevel 1 (
-        echo Error en el segundo intento. Intentando método alternativo...
-        git clone --depth 1 --single-branch --no-checkout https://github.com/gonzalayno/spotdl_local.git "%TEMP_DIR%"
-        if errorlevel 1 (
-            echo Error: No se pudo clonar el repositorio.
-            echo Por favor, verifica tu conexión a Internet y vuelve a intentarlo.
-            echo Si el problema persiste, intenta:
-            echo 1. Verificar tu conexión a Internet
-            echo 2. Desactivar temporalmente tu firewall
-            echo 3. Usar una VPN si estás detrás de un proxy
-            pause
-            exit /b 1
-        )
-    )
+REM Verificar si se descargaron los archivos
+if not exist "%TEMP_DIR%\music_downloader.py" (
+    echo Error: No se pudieron descargar los archivos necesarios.
+    echo Por favor, verifica tu conexión a Internet y vuelve a intentarlo.
+    pause
+    exit /b 1
 )
 
 REM Cambiar al directorio del proyecto
