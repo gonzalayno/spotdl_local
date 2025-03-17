@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext, messagebox
 import subprocess
 import os
 from PIL import Image, ImageTk
@@ -7,12 +7,16 @@ import requests
 from io import BytesIO
 import re
 from ttkthemes import ThemedTk
+import random
+import time
+import webbrowser
+import json
 
 
 class SpotifyDownloaderApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Spotify Music Downloader")
+        self.root.title("Music Downloader")
         self.root.geometry("800x600")
         self.root.minsize(700, 550)
 
@@ -26,8 +30,18 @@ class SpotifyDownloaderApp:
 
         self.url_var = tk.StringVar()
         self.format_var = tk.StringVar(value="mp3")
+        self.platform_var = tk.StringVar(value="spotify")
         self.download_path = os.path.expanduser("~/Downloads")
         self.process = None
+        self.is_youtube_logged_in = False
+        
+        # Lista de User-Agents para rotación
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59"
+        ]
 
         self.create_header()
         self.create_main_frame()
@@ -44,7 +58,7 @@ class SpotifyDownloaderApp:
         header_frame.pack(fill=tk.X)
 
         self.load_logo(header_frame)
-        app_title = ttk.Label(header_frame, text="Spotify Music Downloader", style="TLabel")
+        app_title = ttk.Label(header_frame, text="Music Downloader", style="TLabel")
         app_title.pack(side=tk.LEFT, padx=10, pady=15)
 
     def load_logo(self, parent):
@@ -63,10 +77,26 @@ class SpotifyDownloaderApp:
         main_frame = ttk.Frame(self.root, style="TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
+        platform_frame = ttk.Frame(main_frame, style="TFrame")
+        platform_frame.pack(fill=tk.X, pady=10)
+        platform_label = ttk.Label(platform_frame, text="Plataforma:")
+        platform_label.pack(side=tk.LEFT, padx=(0, 10))
+        platforms = ["spotify", "youtube"]
+        platform_combobox = ttk.Combobox(platform_frame, textvariable=self.platform_var, values=platforms, state="readonly",
+                                       width=15)
+        platform_combobox.pack(side=tk.LEFT)
+        platform_combobox.bind('<<ComboboxSelected>>', self.update_url_label)
+
+        # Agregar botón de inicio de sesión de YouTube
+        self.youtube_login_button = ttk.Button(platform_frame, text="Iniciar sesión en YouTube", 
+                                             command=self.youtube_login, width=20)
+        self.youtube_login_button.pack(side=tk.RIGHT, padx=5)
+        self.update_youtube_login_status()
+
         url_frame = ttk.Frame(main_frame, style="TFrame")
         url_frame.pack(fill=tk.X, pady=10)
-        url_label = ttk.Label(url_frame, text="URL de Spotify:")
-        url_label.pack(anchor=tk.W)
+        self.url_label = ttk.Label(url_frame, text="URL de Spotify:")
+        self.url_label.pack(anchor=tk.W)
         url_entry = ttk.Entry(url_frame, textvariable=self.url_var, width=50)
         url_entry.pack(fill=tk.X, ipady=8)
 
@@ -112,21 +142,99 @@ class SpotifyDownloaderApp:
         status_label = ttk.Label(footer_frame, text="Listo para descargar", foreground="#AAAAAA")
         status_label.pack(side=tk.LEFT, padx=15, pady=10)
 
+    def update_url_label(self, event=None):
+        platform = self.platform_var.get()
+        if platform == "spotify":
+            self.url_label.config(text="URL de Spotify:")
+        else:
+            self.url_label.config(text="URL de YouTube:")
+
     def select_path(self):
         path = filedialog.askdirectory(initialdir=self.download_path)
         if path:
             self.download_path = path
             self.path_display.config(text=path)
 
+    def get_random_user_agent(self):
+        return random.choice(self.user_agents)
+
+    def youtube_login(self):
+        """Abre YouTube en el navegador para iniciar sesión"""
+        self.log_message("Abriendo YouTube para iniciar sesión...")
+        webbrowser.open('https://accounts.google.com/signin/v2/identifier?service=youtube')
+        
+        # Mostrar instrucciones más detalladas
+        messagebox.showinfo("Inicio de sesión en YouTube", 
+                          "Sigue estos pasos:\n\n" +
+                          "1. Se abrirá una ventana del navegador con la página de inicio de sesión de Google\n" +
+                          "2. Inicia sesión con tu cuenta de Google\n" +
+                          "3. Si aparece una pantalla de verificación de seguridad, completa los pasos\n" +
+                          "4. Una vez que hayas iniciado sesión correctamente, cierra la ventana del navegador\n" +
+                          "5. Vuelve aquí y haz clic en 'OK' para continuar\n\n" +
+                          "Importante: Asegúrate de iniciar sesión completamente antes de cerrar el navegador.")
+        
+        self.is_youtube_logged_in = True
+        self.update_youtube_login_status()
+        self.log_message("Inicio de sesión en YouTube completado.")
+
+    def update_youtube_login_status(self):
+        """Actualiza el estado del botón de inicio de sesión"""
+        if self.is_youtube_logged_in:
+            self.youtube_login_button.config(text="✓ Sesión iniciada", state="disabled")
+        else:
+            self.youtube_login_button.config(text="Iniciar sesión en YouTube", state="normal")
+
     def download_music(self):
         url = self.url_var.get().strip()
         if not url:
-            self.log_message("Error: URL de Spotify no proporcionada")
+            self.log_message("Error: URL no proporcionada")
             return
 
-
         formato = self.format_var.get()
-        comando = ["spotdl", "--output", self.download_path, "--format", formato, "download", url]
+        platform = self.platform_var.get()
+
+        if platform == "spotify":
+            comando = ["spotdl", "--output", self.download_path, "--format", formato, "download", url]
+        else:  # youtube
+            if not self.is_youtube_logged_in:
+                respuesta = messagebox.askyesno("Inicio de sesión requerido", 
+                                              "Para descargar de YouTube, necesitas iniciar sesión primero.\n" +
+                                              "¿Deseas iniciar sesión ahora?")
+                if respuesta:
+                    self.youtube_login()
+                    return
+                else:
+                    return
+
+            # Crear directorio temporal para cookies si no existe
+            temp_dir = os.path.join(os.path.expanduser("~"), ".yt-dlp")
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            # Generar un nombre de archivo temporal para las cookies
+            cookie_file = os.path.join(temp_dir, f"cookies_{int(time.time())}.txt")
+            
+            comando = [
+                "yt-dlp",
+                "-x",
+                "--audio-format", formato,
+                "--audio-quality", "0",
+                "--no-check-certificates",
+                "--no-warnings",
+                "--ignore-errors",
+                "--extract-audio",
+                "--add-header", f"User-Agent:{self.get_random_user_agent()}",
+                "--no-playlist",
+                "--cookies-from-browser", "chrome",  # Usar cookies del navegador Chrome
+                "--sleep-interval", "2",
+                "--max-sleep-interval", "5",
+                "--retries", "10",
+                "--fragment-retries", "10",
+                "--file-access-retries", "10",
+                "--extractor-retries", "10",
+                "--socket-timeout", "30",
+                "-o", os.path.join(self.download_path, "%(title)s.%(ext)s"),
+                url
+            ]
 
         try:
             self.log_message("Iniciando descarga...")
@@ -162,7 +270,7 @@ class SpotifyDownloaderApp:
 
 
 if __name__ == "__main__":
-    root = ThemedTk(theme="equilux")  # Usa un tema oscuro como base
+    root = ThemedTk(theme="equilux")
     root.configure(bg="#121212")
     app = SpotifyDownloaderApp(root)
     root.mainloop()

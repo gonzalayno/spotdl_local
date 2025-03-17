@@ -2,4 +2,5 @@ spotdl
 ttkthemes
 pillow
 requests
-pyinstaller 
+pyinstaller
+yt-dlp>=2024.3.10 

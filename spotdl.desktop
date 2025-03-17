@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SpotDL Music Downloader
+Comment=Descarga música de Spotify y YouTube
+Exec=/usr/local/bin/spotdl
+Icon=/usr/share/icons/spotdl.png
+Terminal=true
+Categories=Audio;AudioVideo;
+Keywords=music;spotify;youtube;downloader;
+StartupWMClass=spotdl
+StartupNotify=true 
