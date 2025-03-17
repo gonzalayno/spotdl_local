@@ -12,6 +12,7 @@ import time
 import webbrowser
 import json
 from pathlib import Path
+from spotdl.utils.ffmpeg import is_ffmpeg_installed
 
 
 class SpotifyDownloaderApp:
