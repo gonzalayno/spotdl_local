@@ -184,8 +184,8 @@ EOL
 
 # Verificar si los archivos necesarios existen
 echo -e "${YELLOW}Verificando archivos necesarios...${NC}"
-if [ ! -f "dist/spotdl" ]; then
-    echo -e "${RED}Error: No se encuentra el archivo dist/spotdl${NC}"
+if [ ! -f "dist/music_downloader" ]; then
+    echo -e "${RED}Error: No se encuentra el archivo dist/music_downloader${NC}"
 fi
 if [ ! -f "spotdl.png" ]; then
     echo -e "${RED}Error: No se encuentra el archivo spotdl.png${NC}"
@@ -194,7 +194,7 @@ if [ ! -f "spotdl.desktop" ]; then
     echo -e "${RED}Error: No se encuentra el archivo spotdl.desktop${NC}"
 fi
 
-if [ ! -f "dist/spotdl" ] || [ ! -f "spotdl.png" ] || [ ! -f "spotdl.desktop" ]; then
+if [ ! -f "dist/music_downloader" ] || [ ! -f "spotdl.png" ] || [ ! -f "spotdl.desktop" ]; then
     echo -e "${RED}Error: No se pudieron crear todos los archivos necesarios.${NC}"
     echo -e "${YELLOW}Contenido del directorio actual:${NC}"
     ls -la
@@ -223,7 +223,7 @@ chmod 644 ~/.spotdl_cache.json
 
 # Copiar archivos
 echo -e "${YELLOW}Copiando archivos...${NC}"
-sudo cp dist/spotdl /usr/local/bin/
+sudo cp dist/music_downloader /usr/local/bin/spotdl
 sudo cp spotdl.png /usr/share/icons/
 sudo cp spotdl.desktop /usr/share/applications/
 

@@ -62,4 +62,10 @@ chmod 644 /usr/share/icons/spotdl.png
 chmod 644 /usr/share/applications/spotdl.desktop
 
 echo "Instalación completada. La aplicación ahora está disponible en el menú de aplicaciones."
-echo "Para probar la aplicación, puedes ejecutar: spotdl" 
+echo "Para probar la aplicación, puedes ejecutar: spotdl"
+
+sudo rm /usr/local/bin/spotdl
+sudo rm /usr/share/icons/spotdl.png
+sudo rm /usr/share/applications/spotdl.desktop
+
+rm -rf build dist 

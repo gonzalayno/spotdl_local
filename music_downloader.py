@@ -14,6 +14,13 @@ import json
 from pathlib import Path
 from spotdl.utils.ffmpeg import is_ffmpeg_installed
 
+def check_ytmusic_connection():
+    """Verifica la conexión con YouTube Music"""
+    try:
+        response = requests.get("https://music.youtube.com", timeout=5)
+        return response.status_code == 200
+    except:
+        return False
 
 class SpotifyDownloaderApp:
     def __init__(self, root):
@@ -206,7 +213,24 @@ class SpotifyDownloaderApp:
         platform = self.platform_var.get()
 
         if platform == "spotify":
-            comando = ["spotdl", "--output", self.download_path, "--format", formato, "download", url]
+            # Verificar si la URL es válida
+            if not any(x in url.lower() for x in ["open.spotify.com", "spotify:"]):
+                self.log_message("Error: URL de Spotify no válida. Debe ser una URL de Spotify o un URI de Spotify.")
+                messagebox.showerror("Error", "La URL proporcionada no es una URL de Spotify válida.")
+                return
+                
+            try:
+                comando = ["spotdl", "--output", self.download_path, "--format", formato, "download", url]
+                self.log_message("Iniciando descarga...")
+                self.process = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                self.download_button.config(state=tk.DISABLED)
+                self.cancel_button.config(state=tk.NORMAL)
+                self.read_output()
+            except Exception as e:
+                self.log_message(f"Error: {str(e)}")
+                messagebox.showerror("Error", f"Error al descargar: {str(e)}")
+                self.download_button.config(state=tk.NORMAL)
+                self.cancel_button.config(state=tk.DISABLED)
         else:  # youtube
             if not self.is_youtube_logged_in:
                 respuesta = messagebox.askyesno("Inicio de sesión requerido", 
@@ -248,14 +272,17 @@ class SpotifyDownloaderApp:
                 url
             ]
 
-        try:
-            self.log_message("Iniciando descarga...")
-            self.process = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            self.download_button.config(state=tk.DISABLED)
-            self.cancel_button.config(state=tk.NORMAL)
-            self.read_output()
-        except Exception as e:
-            self.log_message(f"Error: {e}")
+            try:
+                self.log_message("Iniciando descarga...")
+                self.process = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                self.download_button.config(state=tk.DISABLED)
+                self.cancel_button.config(state=tk.NORMAL)
+                self.read_output()
+            except Exception as e:
+                self.log_message(f"Error: {str(e)}")
+                messagebox.showerror("Error", f"Error al descargar: {str(e)}")
+                self.download_button.config(state=tk.NORMAL)
+                self.cancel_button.config(state=tk.DISABLED)
 
     def read_output(self):
         if self.process:
@@ -295,8 +322,8 @@ class SpotifyDownloaderApp:
     def _load_from_cache(self):
         try:
             cache_data = json.loads(self.cache_file.read_text())
-            # Cargar datos del caché
-            self.spotify_client = cache_data.get('spotify_client')
+            if time.time() - cache_data['timestamp'] > self.cache_duration:
+                raise ValueError("Cache expired")
             self.ffmpeg_installed = cache_data.get('ffmpeg_installed')
             self.ytm_connection = cache_data.get('ytm_connection')
         except:
@@ -306,7 +333,6 @@ class SpotifyDownloaderApp:
         try:
             cache_data = {
                 'timestamp': time.time(),
-                'spotify_client': self.spotify_client,
                 'ffmpeg_installed': self.ffmpeg_installed,
                 'ytm_connection': self.ytm_connection
             }
@@ -327,14 +353,6 @@ class SpotifyDownloaderApp:
         # Verificar conexión YTM
         if check_ytmusic_connection():
             self.ytm_connection = True
-            
-        # Inicializar cliente Spotify
-        try:
-            self.spotify_client = SpotifyClient()
-        except:
-            pass
-            
-        # Resto de la inicialización...
 
 
 if __name__ == "__main__":
